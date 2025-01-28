@@ -1,0 +1,9 @@
+nbformat
+streamlit
+Pillow
+numpy
+pandas
+matplotlib
+tensorflow
+keras
+tensorflow_hub
