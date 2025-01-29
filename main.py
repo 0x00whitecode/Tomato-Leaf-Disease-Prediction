@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, jsonify
 from PIL import Image
 import numpy as np
 import tensorflow as tf
@@ -10,10 +10,12 @@ app = Flask(__name__)
 classifier_model = keras.models.load_model('tomatoes.h5', compile=False)
 
 # Class names for the predictions
-class_names = ['Tomato_Bacterial_spot', 'Tomato_Early_blight', 'Tomato_Late_blight',
-               'Tomato_Leaf_Mold', 'Tomato_Septoria_leaf_spot', 
-               'Tomato_Spider_mites_Two_spotted_spider_mite', 'Tomato_Target_Spot', 
-               'Tomato_Tomato_YellowLeaf_Curl_Virus', 'Tomato_Tomato_mosaic_virus', 'Tomato_healthy']
+class_names = [
+    'Tomato_Bacterial_spot', 'Tomato_Early_blight', 'Tomato_Late_blight',
+    'Tomato_Leaf_Mold', 'Tomato_Septoria_leaf_spot',
+    'Tomato_Spider_mites_Two_spotted_spider_mite', 'Tomato_Target_Spot',
+    'Tomato_Tomato_YellowLeaf_Curl_Virus', 'Tomato_Tomato_mosaic_virus', 'Tomato_healthy'
+]
 
 descriptions = {
     'Tomato_Bacterial_spot': "A bacterial infection causing angular, water-soaked lesions.",
@@ -60,32 +62,31 @@ def predict_class(image):
 
     return final_pred, confidence, description, action
 
-# Routes
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    if request.method == 'POST':
-        # Check if an image file was uploaded
-        if 'file' not in request.files:
-            return render_template('index.html', error='No file uploaded.')
+# Route to handle file uploads and prediction
+@app.route('/', methods=['POST'])
+def predict():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
 
-        file = request.files['file']
-        if file.filename == '':
-            return render_template('index.html', error='No file selected.')
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
 
-        if file:
+    if file:
+        try:
             # Open the image file
             image = Image.open(file)
             result, confidence, description, actions = predict_class(image)
-            
-            return render_template('index.html',
-                                   result=result,
-                                   confidence=confidence,
-                                   description=description,
-                                   actions=actions,
-                                   image=file.filename)
 
-    return render_template('index.html')
+            return jsonify({
+                'result': result,
+                'confidence': confidence,
+                'description': description,
+                'actions': actions
+            })
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
+# Run the Flask app
 if __name__ == '__main__':
     app.run(debug=True)
-
