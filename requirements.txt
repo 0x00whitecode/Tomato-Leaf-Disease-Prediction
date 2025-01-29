@@ -8,3 +8,4 @@ matplotlib
 keras
 tensorflow_hub
 tensorflow
+gunicorn
